@@ -1,0 +1,5 @@
+.DS_Store
+.amusic
+.vscode
+__pycache__
+*.png

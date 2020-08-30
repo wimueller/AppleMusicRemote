@@ -16,17 +16,17 @@ sio.on("current-track", function(songName){
 
 sio.on("player-status", function(status){
     if(status == 0)
-        $("#PlayPause").attr("class","fas fa-play-circle fa-3x")
+        $("#PlayPause").attr("class","icon-cog fas fa-play-circle fa-3x")
     else if(status == 1)
-        $("#PlayPause").attr("class","fas fa-pause-circle fa-3x")
+        $("#PlayPause").attr("class","icon-cog fas fa-pause-circle fa-3x")
     
 })
 
 sio.on("mute-status", function(muteStatus){
     if(muteStatus == false)
-        $("#muted").attr("class","fas fa-volume-up fa-2x")
+        $("#muted").attr("class","icon-cog fas fa-volume-up fa-2x")
     else if (muteStatus == true)
-        $("#muted").attr("class","fas fa-volume-off fa-2x")
+        $("#muted").attr("class","icon-cog fas fa-volume-off fa-2x")
 })
 
 sio.on("shuffle-status", function(shuffleStatus){
@@ -71,7 +71,7 @@ function getPlaylists(){
         url: serverUrl + "api/playlists",
         success: function(data){
             data["plists"].forEach(element => {
-                $("#playlists").append("<li onclick=\"playPlaylist('"+element+"')\">"+element+"</li>")
+                $("#playlists").append("<li class= \"icon-cog\" onclick=\"playPlaylist('"+element+"')\">"+element+"</li>")
             });
         }
     })

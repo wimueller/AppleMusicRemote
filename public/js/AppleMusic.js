@@ -1,8 +1,10 @@
 $(document).ready(function(){
+    console.log("the document is ready")
     getPlaylists()
+    getAlbums()
 })
 
-serverUrl = "http://<serverAddress>:3000/"
+serverUrl = "http://192.168.178.148:3000/"
 
 var sio = io()
 
@@ -77,6 +79,20 @@ function getPlaylists(){
     })
 }
 
+// gets list of albumnames and displays it frontend
+function getAlbums(){
+    print("getAlbums was called")
+    $.ajax({
+        type: "GET",
+        url: serverUrl + "api/albumNameList",
+        success: function(data){
+            data["albumNames"].forEach(albumName => {
+                $("#albums").append("<li class= \"icon-cog\" onclick=\"playAlbum('"+albumName+"')\">"+albumName+"</li>")
+            });
+        }
+    })
+}
+
 function playPause(){
     $.ajax({ 
         type:"GET", 
@@ -112,5 +128,12 @@ function playPlaylist(value){
     $.ajax({
         type: "GET",
         url: serverUrl + "api/playplaylist?playlistName=" + value
+    })
+}
+
+function playAlbum(value){
+    $.ajax({
+        type: "GET",
+        url: serverUrl + "api/playalbum?albumName=" + value
     })
 }

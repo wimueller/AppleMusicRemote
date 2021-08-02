@@ -1,5 +1,5 @@
 import appscript as aps
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, json, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__, static_folder='public/')
@@ -9,11 +9,17 @@ am = aps.app('Music')
 
 lib = am.library_playlists['Library']
 trackList = lib.tracks
+global playlists
 playlists = am.playlists()
+playlistAll = am.playlists()[0].get()
+# all tracks in the library
+allTracks = playlistAll.tracks.get()
+albumDict = {}
 	
 @sio.on('connect')
 def connect():
 	emit('server-status', 'Connected to Apple Music.')
+	loadAlbumDict()
 	saveArtowrk()
 	updateUI()
 
@@ -34,6 +40,19 @@ def updateUI():
 	sio.emit('shuffle-status', am.shuffle_enabled())
 	sio.emit('mute-status', am.mute())
 
+def loadAlbumDict():
+	"""loads the album structure to albumDict in memory"""
+	currentAlbum = allTracks[0].album.get()
+	for trackObj in allTracks:
+		trackObjAlbum = trackObj.album.get()
+		if trackObjAlbum not in albumDict.keys():
+			albumDict[trackObjAlbum] = [trackObjAlbum]
+		if trackObjAlbum == currentAlbum:
+			albumDict[trackObjAlbum].append(trackObj)
+		else:
+			currentAlbum = trackObjAlbum
+			albumDict[trackObjAlbum].append(trackObj)
+	
 @app.route('/', methods=['GET'])
 def root():
 	return render_template('index.html', title='Apple Music')
@@ -115,6 +134,34 @@ def stop():
 	am.stop()
 	return ('',200)
 
+@app.route('/api/albumNameList', methods=['GET'])
+def getAlbumNameList():
+	"""Return list of all albums in the music library."""
+	return jsonify({'albumNames': list(albumDict.keys())})
+
+@app.route('/api/playalbum', methods=['GET'])
+def playAlbum():
+	"""Play the specified album"""
+	albumName = request.args.get('albumName')
+	# execute the applescript here
+	playlistNames = [_.name() for _ in playlists]
+	if('temp_playlist' in playlistNames):
+		am.playlists['temp_playlist'].delete()
+	tempPlaylist = am.make(new=aps.k.playlist, with_properties={aps.k.name: 'temp_playlist'})
+	refreshPlaylists()
+	albumTracks = albumDict[albumName]
+	albumTracks.pop(0)
+	# tempPlaylist = am.playlists[aps.its.name.contains('temp_playlist')].get()[0]
+	print("Templaylist: ", tempPlaylist)
+	for trackObj in albumTracks:
+		am.duplicate(trackObj, to=tempPlaylist)
+	tempPlaylist.play()
+	
+	saveArtowrk()
+	
+	updateUI()
+	return ('',200)
+
 @app.route('/api/playlists', methods=['GET'])
 def getPlaylists():
 	"""Return list of avaliable playlists."""
@@ -161,6 +208,10 @@ def saveArtowrk():
 	with open('./public/img/now_playing.png', 'wb') as file:
 		file.write(imageData)
 	sio.emit('update-art', '')
+
+def refreshPlaylists():
+	global playlists
+	playlists = am.playlists()
 
 if __name__ == '__main__':
 	print("-------------------------------------------------------------------------")
